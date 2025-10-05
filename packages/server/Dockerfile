@@ -1,18 +1,37 @@
-FROM node:18-alpine as build
+FROM node:18-alpine AS deps
 
-# Move files into the image and install
 WORKDIR /app
-COPY ./*.* ./
-# NOTE plc's transitive dependencies go here: if that changes, this needs to be updated.
+
+COPY package.json yarn.lock lerna.json tsconfig.json ./
+COPY ./packages/lib/package.json ./packages/lib/package.json
+COPY ./packages/server/package.json ./packages/server/package.json
+COPY ./packages/server/service/package.json ./packages/server/service/package.json
+COPY ./packages/server/service/yarn.lock ./packages/server/service/yarn.lock
+
+RUN --mount=type=cache,target=/root/.yarn,sharing=locked \
+    --mount=type=cache,target=/app/node_modules/.cache,sharing=locked \
+    yarn install --frozen-lockfile --ignore-scripts > /dev/null
+
+FROM node:18-alpine AS build
+
+WORKDIR /app
+
+COPY --from=deps /app ./
+
 COPY ./packages/lib ./packages/lib
 COPY ./packages/server ./packages/server
-RUN PLC_BUILD_SHALLOW=true yarn install --frozen-lockfile > /dev/null
-RUN yarn workspaces run build --update-main-to-dist > /dev/null
-# Remove non-prod deps
-RUN yarn install --production --ignore-scripts --prefer-offline > /dev/null
 
-WORKDIR packages/server/service
-RUN yarn install --frozen-lockfile > /dev/null
+RUN --mount=type=cache,target=/app/node_modules/.cache,sharing=locked \
+    yarn workspaces run build > /dev/null && \
+    yarn workspace @did-plc/server run update-main-to-dist
+
+RUN --mount=type=cache,target=/root/.yarn,sharing=locked \
+    --mount=type=cache,target=/app/node_modules/.cache,sharing=locked \
+    yarn install --production --ignore-scripts --prefer-offline > /dev/null
+
+WORKDIR /app/packages/server/service
+RUN --mount=type=cache,target=/root/.yarn,sharing=locked \
+    yarn install --frozen-lockfile > /dev/null
 
 # Uses assets from build stage to reduce build size
 FROM node:18-alpine
