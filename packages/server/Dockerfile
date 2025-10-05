@@ -1,17 +1,21 @@
-FROM node:18-alpine as build
+FROM node:18-alpine AS build
 
-# Move files into the image and install
 WORKDIR /app
-COPY ./*.* ./
-# NOTE plc's transitive dependencies go here: if that changes, this needs to be updated.
+
+COPY package.json yarn.lock lerna.json tsconfig.json ./
+COPY ./packages/lib/package.json ./packages/lib/package.json
+COPY ./packages/server/package.json ./packages/server/package.json
+
+RUN yarn install --frozen-lockfile --ignore-scripts > /dev/null
+
 COPY ./packages/lib ./packages/lib
 COPY ./packages/server ./packages/server
-RUN PLC_BUILD_SHALLOW=true yarn install --frozen-lockfile > /dev/null
+
 RUN yarn workspaces run build --update-main-to-dist > /dev/null
-# Remove non-prod deps
+
 RUN yarn install --production --ignore-scripts --prefer-offline > /dev/null
 
-WORKDIR packages/server/service
+WORKDIR /app/packages/server/service
 RUN yarn install --frozen-lockfile > /dev/null
 
 # Uses assets from build stage to reduce build size
