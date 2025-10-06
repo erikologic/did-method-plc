@@ -419,3 +419,4 @@ Bluesky Social PBC has committed to a software patent non-aggression pledge. For
 - `verificationMethods` keys may now use any syntactically-valid `did:key:`, regardless of key format (allowing e.g. `ed25519` keys). Rotation keys are not affected by this change, the original format constraints still apply.
 
 - A total limit of 10 `verificationMethods` (per DID) has been added.
+
