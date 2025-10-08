@@ -48,7 +48,7 @@ jobs:
           images: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,enable=true,priority=100,prefix=plc:,suffix=,format=long
+            type=sha,enable=true,priority=100,format=long
             type=raw,value={{date 'YYYY-MM-DDTHH-mm-ssZ'}}
             latest
 
@@ -110,7 +110,7 @@ jobs:
           images: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,enable=true,priority=100,prefix=plc:,suffix=,format=long
+            type=sha,enable=true,priority=100,format=long
             type=raw,value={{date 'YYYY-MM-DDTHH-mm-ssZ'}}
             latest
 
